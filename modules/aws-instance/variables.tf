@@ -50,3 +50,7 @@ variable "key_pair" {
 variable "internal_dns_zone_id" {
   description = "The internal DNS zone to set a record against"
 }
+
+variable "efs_file_system_id" {
+  description = "The EFS Filesystem which we will mount for purposes of Ansilble Inventory"
+}

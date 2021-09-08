@@ -15,14 +15,9 @@ data "aws_subnet" "selected" {
 
 data "template_file" "bootstrap-confluent" {
   template = file("${path.module}/${var.user_data_template}")
-//  vars = {
-//    ebs_volume = aws_ebs_volume.pm-ebs.id
-//    environment = var.environment
-//    remote-state-environment = var.remote-state-environment
-//    access_key = aws_iam_access_key.columnstore_user_keys.id
-//    secret_key = aws_iam_access_key.columnstore_user_keys.secret
-//    iam_role = aws_iam_role.ec2_ssm_access_role.name
-//  }
+  vars = {
+    file_system_id = var.efs_file_system_id
+  }
 }
 
 resource "aws_instance" "app" {
@@ -47,7 +42,7 @@ resource "aws_ebs_volume" "pm-ebs" {
   count = var.data_disk_size > 0 ? var.instance_count : 0
   availability_zone = element(data.aws_subnet.selected.*.availability_zone, count.index)
   size              = 4500
-  encrypted = true
+  encrypted = false
   tags = {
     Name = "${var.name}-${var.environment}-${count.index}"
   }
@@ -59,7 +54,6 @@ resource "aws_volume_attachment" "ebs_att" {
   volume_id   = aws_ebs_volume.pm-ebs[count.index].id
   instance_id = aws_instance.app[count.index].id
 }
-
 
 resource "aws_route53_record" "www" {
   count = var.instance_count

@@ -18,4 +18,5 @@ module "broker" {
 
   user_data_template = "broker.yml.tpl"
   internal_dns_zone_id = module.zones.route53_zone_zone_id["confluent.internal"]
+  efs_file_system_id = aws_efs_file_system.cp-ansible.id
 }
