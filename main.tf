@@ -7,10 +7,11 @@ data "aws_availability_zones" "available" {
 }
 
 module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
+  source = "terraform-aws-modules/vpc/aws"
+  version = "3.7.0"
 
   for_each = var.project
-  cidr = var.vpc_cidr_block
+  cidr     = var.vpc_cidr_block
 
   azs             = data.aws_availability_zones.available.names
   private_subnets = slice(var.private_subnet_cidr_blocks, 0, each.value.private_subnet_count)
@@ -20,31 +21,56 @@ module "vpc" {
   enable_vpn_gateway = false
 }
 
-module "app_security_group" {
-  source  = "terraform-aws-modules/security-group/aws//modules/web"
-  version = "3.17.0"
+module "zones" {
+  source  = "terraform-aws-modules/route53/aws//modules/zones"
+  version = "~> 2.0"
+  zones = {
+    "confluent.internal" = {
+      comment = "confluent.internal"
+    }
+  }
+  tags = {
+    ManagedBy = "Terraform"
+  }
+}
 
+module "internal_comms_security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "4.3.0"
   for_each = var.project
 
-  name        = "web-server-sg-${each.key}-${each.value.environment}"
+  name        = "internal-comms-sg-${each.key}-${each.value.environment}"
+  description = "Security group to allow all confluent components to speak with each other."
+  vpc_id      = module.vpc[each.key].vpc_id
+
+  ingress_cidr_blocks = module.vpc[each.key].public_subnets_cidr_blocks
+  ingress_rules        = ["all-all"]
+}
+
+module "kafka_security_group" {
+  source  = "terraform-aws-modules/security-group/aws//modules/kafka"
+  version = "4.3.0"
+  for_each = var.project
+
+  name        = "kafka-sg-${each.key}-${each.value.environment}"
   description = "Security group for web-servers with HTTP ports open within VPC"
   vpc_id      = module.vpc[each.key].vpc_id
 
   ingress_cidr_blocks = module.vpc[each.key].public_subnets_cidr_blocks
 }
 
-module "lb_security_group" {
-  source  = "terraform-aws-modules/security-group/aws//modules/web"
-  version = "3.17.0"
-
+module "ssh_security_group" {
+  source  = "terraform-aws-modules/security-group/aws//modules/ssh"
+  version = "4.3.0"
   for_each = var.project
 
-  name = "load-balancer-sg-${each.key}-${each.value.environment}"
-
-  description = "Security group for load balancer with HTTP ports open within VPC"
+  name        = "ssh-sg-${each.key}-${each.value.environment}"
+  description = "Security group for web-servers with HTTP ports open within VPC"
   vpc_id      = module.vpc[each.key].vpc_id
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
+
+//  ingress_cidr_blocks = module.vpc[each.key].public_subnets_cidr_blocks
 }
 
 resource "random_string" "lb_id" {
@@ -69,4 +95,16 @@ terraform {
   }
 }
 
+resource "tls_private_key" "pk" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
 
+resource "aws_key_pair" "kp" {
+  key_name   = "myKey"       # Create a "myKey" to AWS!!
+  public_key = tls_private_key.pk.public_key_openssh
+
+  provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
+    command = "echo '${tls_private_key.pk.private_key_pem}' > ./myKey.pem"
+  }
+}

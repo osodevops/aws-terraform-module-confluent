@@ -31,18 +31,18 @@ variable "project" {
   type        = map(any)
   default = {
     project-alpha = {
-      public_subnet_count  = 1,
-      private_subnet_count = 3,
-      broker_instances_per_subnet = 1,
-      zookeeper_instances_per_subnet = 1,
-      control_center_instances_per_subnet = 1,
+      public_subnet_count                  = 3,
+      private_subnet_count                 = 3,
+      broker_instances_per_subnet          = 1,
+      zookeeper_instances_per_subnet       = 1,
+      control_center_instances_per_subnet  = 1,
       schema_registry_instances_per_subnet = 1,
-      kafka_connect_instances_per_subnet = 1,
-      rest_proxy_instances_per_subnet = 1,
-      ksql_instances_per_subnet = 1,
-      instances_per_subnet = 2,
-      instance_type        = "t2.micro",
-      environment          = "dev"
+      kafka_connect_instances_per_subnet   = 1,
+      rest_proxy_instances_per_subnet      = 1,
+      ksql_instances_per_subnet            = 1,
+      instances_per_subnet                 = 2,
+      instance_type                        = "t2.micro",
+      environment                          = "dev"
     }
   }
 }

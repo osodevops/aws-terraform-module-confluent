@@ -8,23 +8,31 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+data "aws_subnet" "selected" {
+  count = var.instance_count
+  id = var.subnet_ids[count.index]
+}
+
+data "template_file" "bootstrap-confluent" {
+  template = file("${path.module}/${var.user_data_template}")
+//  vars = {
+//    ebs_volume = aws_ebs_volume.pm-ebs.id
+//    environment = var.environment
+//    remote-state-environment = var.remote-state-environment
+//    access_key = aws_iam_access_key.columnstore_user_keys.id
+//    secret_key = aws_iam_access_key.columnstore_user_keys.secret
+//    iam_role = aws_iam_role.ec2_ssm_access_role.name
+//  }
+}
+
 resource "aws_instance" "app" {
   count = var.instance_count
-
   ami           = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
-
   subnet_id              = var.subnet_ids[count.index % length(var.subnet_ids)]
   vpc_security_group_ids = var.security_group_ids
-
-  user_data = <<-EOF
-    #!/bin/bash
-    sudo yum update -y
-    sudo yum install httpd -y
-    sudo systemctl enable httpd
-    sudo systemctl start httpd
-    echo "<html><body><div>Hello, world!</div></body></html>" > /var/www/html/index.html
-    EOF
+  key_name               = var.key_pair
+  user_data              = data.template_file.bootstrap-confluent.rendered
 
   tags = {
     Terraform   = "true"
@@ -32,16 +40,16 @@ resource "aws_instance" "app" {
     Environment = var.environment
     Name        = "${var.name}-${count.index}"
   }
+
 }
 
 resource "aws_ebs_volume" "pm-ebs" {
   count = var.data_disk_size > 0 ? var.instance_count : 0
-  availability_zone = "eu-west-2a"
+  availability_zone = element(data.aws_subnet.selected.*.availability_zone, count.index)
   size              = 4500
   encrypted = true
-
   tags = {
-    Name = "pm-${var.environment}"
+    Name = "${var.name}-${var.environment}-${count.index}"
   }
 }
 
@@ -50,4 +58,14 @@ resource "aws_volume_attachment" "ebs_att" {
   device_name = "/dev/sdh"
   volume_id   = aws_ebs_volume.pm-ebs[count.index].id
   instance_id = aws_instance.app[count.index].id
+}
+
+
+resource "aws_route53_record" "www" {
+  count = var.instance_count
+  zone_id = var.internal_dns_zone_id
+  name    = "${var.name}-${count.index}"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.app[count.index].private_ip]
 }

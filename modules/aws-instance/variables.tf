@@ -40,5 +40,13 @@ variable data_disk_size {
 
 variable "user_data_template" {
   description = "The user_data template to use on cloud init"
-  default = "default"
+  default = "default.yml.tpl"
+}
+
+variable "key_pair" {
+  description = "The KeyPair used to connect to EC2 instances"
+}
+
+variable "internal_dns_zone_id" {
+  description = "The internal DNS zone to set a record against"
 }
