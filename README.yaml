@@ -1,0 +1,43 @@
+---
+#
+# This is the canonical configuration for the `README.md`
+# Run `make readme` to rebuild the `README.md`
+#
+
+# Name of this project
+name: "Confluent Platform on AWS"
+
+# Short description of this project
+description: |-
+  Terraform Module for deploying best practice HA Confluent Platform on AWS
+
+# Canonical GitHub repo
+github_repo: osodevops/aws-terraform-module-confluent
+
+# How to use this project
+usage: |-
+  This is currently working in progress - the install part is not yet working correctly.
+
+# Example usage
+examples: |-
+  WIP - still to resovle install
+  ```shell
+    [root@ip-10-0-3-6 data]# df -h
+    Filesystem      Size  Used Avail Use% Mounted on
+    devtmpfs        482M     0  482M   0% /dev
+    tmpfs           492M     0  492M   0% /dev/shm
+    tmpfs           492M  468K  492M   1% /run
+    tmpfs           492M     0  492M   0% /sys/fs/cgroup
+    /dev/xvda1      8.0G  1.5G  6.6G  19% /
+    /dev/xvdh       4.4T   89M  4.2T   1% /var/lib/kafka/data
+    tmpfs            99M     0   99M   0% /run/user/0
+    tmpfs            99M     0   99M   0% /run/user/1000
+  ```
+
+related:
+  - name: "Confluent Platform on Azure"
+    description: "Terraform module to deploy CP using supported Ansible scripts"
+    url: "https://github.com/osodevops/terraform-azure-confluent-platform"
+  - name: "CP Ansible Docker"
+    description: "Docker wrapper to run CP Ansible on air gapped environments"
+    url: "https://github.com/osodevops/docker-cp-ansible"
