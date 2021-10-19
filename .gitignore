@@ -1,3 +1,7 @@
+.idea
+.terraform
+*.lock*
+*.pem
 # Compiled files
 *.tfstate
 *.tfstate.backup
@@ -9,5 +13,3 @@
 
 .build-harness
 build-harness
-
-test.log
